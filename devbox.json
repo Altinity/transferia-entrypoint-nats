@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
+  "packages": [
+    "go@1.24.4",
+    "govulncheck@1.1.4",
+    "curl@8.12.1",
+    "ripgrep@14.1.1",
+    "git@2.48.1",
+    "gnumake@4.4.1",
+    "coreutils@9.6",
+    "moreutils@0.70",
+    "lefthook@1.11.2",
+    "just@1.40.0",
+    "golangci-lint@2.1.6",
+    "goimports@2021-01-13",
+    "shfmt@3.11.0"
+  ],
+  "env": {
+    "DIRENV_LOG_FORMAT":    "",
+    "DIRENV_LOG_VERBOSE":   "0",
+    "GOPRIVATE":            "github.com/altinity/*",
+    "GOROOT":               "",
+    "NIX_HARDENING_ENABLE": ""
+  },
+  "shell": {
+    "init_hook": [
+      "lefthook install"
+    ],
+    "scripts": {
+      "test": [
+        "just test"
+      ]
+    }
+  }
+}

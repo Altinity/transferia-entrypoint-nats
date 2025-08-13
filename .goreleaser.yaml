@@ -1,0 +1,64 @@
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+project_name: "@@PROJECT_NAME@@"
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd/@@PROJECT_NAME@@
+    binary: "@@PROJECT_NAME@@"
+
+archives:
+  - formats: ["tar.gz"]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Os }}_
+      {{- .Arch }}
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: "altinity"
+    name: "@@PROJECT_NAME@@"
+
+  name_template: "{{.ProjectName}}-v{{.Version}}"
+
+dockers:
+  - image_templates:
+      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-amd64"
+    goos: linux
+    goarch: amd64
+    use: buildx
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-arm64"
+    goos: linux
+    goarch: arm64
+    use: buildx
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/arm64"
+docker_manifests:
+  - name_template: "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}"
+    image_templates:
+      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-amd64"
+      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-arm64"

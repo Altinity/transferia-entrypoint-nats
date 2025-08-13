@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ -f "$PROJECT_ROOT/.bin/.initialized" ]]; then
+	echo "Already initialized."
+	echo "To reinitialize, remove the file: $PROJECT_ROOT/.bin/.initialized and run this script again."
+	exit 0
+fi
+
+if ! command -v just &>/dev/null; then
+	echo "just command not found. Please install just (https://github.com/casey/just) to continue."
+	exit 1
+fi
+
+if ! command -v devbox &>/dev/null; then
+	just devbox
+fi
+
+PROJECT="$1"
+PROJECT_NAME="${PROJECT##*/}"
+# Remove any separators from the project name
+GO_PROJECT_NAME="${PROJECT_NAME//[-_]/}"
+
+go mod init github.com/Altinity/"$PROJECT_NAME"
+
+# Replace @@PROJECT_NAME@@ with the actual project name in .goreleaser.yaml
+GORELEASER_FILE="$PROJECT_ROOT/.goreleaser.yaml"
+if [[ -f "$GORELEASER_FILE" ]]; then
+	sed -i "s|@@PROJECT_NAME@@|$PROJECT_NAME|g" "$GORELEASER_FILE"
+else
+	echo ".goreleaser.yaml not found in $PROJECT_ROOT"
+fi
+
+DOCKERFILE="$PROJECT_ROOT/Dockerfile"
+if [[ -f "$DOCKERFILE" ]]; then
+	sed -i "s|@@PROJECT_NAME@@|$PROJECT_NAME|g" "$DOCKERFILE"
+fi
+
+if [[ -f "$PROJECT_ROOT/main.go" ]]; then
+	sed -i "s|@@GO_PROJECT_NAME@@|$GO_PROJECT_NAME|g" "$PROJECT_ROOT/main.go"
+fi
+
+mkdir -p "$PROJECT_ROOT/cmd/$PROJECT_NAME"
+
+cat <<EOF >"$PROJECT_ROOT/cmd/$PROJECT_NAME"
+package main
+
+import (
+  "context"
+  "github.com/Altinity/$PROJECT_NAME"
+)
+
+func main() {
+  $GO_PROJECT_NAME.Run(context.Background())
+}
+EOF
+
+# Mark the project as initialized
+touch "$PROJECT_ROOT/.bin/.initialized"

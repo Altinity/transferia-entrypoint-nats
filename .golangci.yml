@@ -1,0 +1,52 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - decorder
+    - godot
+    - gosec
+    - govet
+    - mirror
+    - nosprintfhostport
+    - staticcheck
+    - unused
+    - usestdlibvars
+  settings:
+    gosec:
+      excludes: []
+    staticcheck:
+      checks:
+        - "all"
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - funlen
+          - goconst
+          - gocritic
+          - gosec
+          - ineffassign
+          - staticcheck
+          - unused
+        path: (.+)_test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - tests/
+      - recipe/
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
