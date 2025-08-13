@@ -12,10 +12,10 @@ RUN apk add --no-cache \
   echo "${TZ}" > /etc/timezone
 
 # Copy the Go binary 
-COPY @@PROJECT_NAME@@ /usr/local/bin/@@PROJECT_NAME@@
+COPY transferia-entrypoint-nats /usr/local/bin/transferia-entrypoint-nats
 
 # Set executable permission
-RUN chmod +x /usr/local/bin/@@PROJECT_NAME@@
+RUN chmod +x /usr/local/bin/transferia-entrypoint-nats
 
 # Entrypoint 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/@@PROJECT_NAME@@"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/transferia-entrypoint-nats"]

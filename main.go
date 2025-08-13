@@ -1,4 +1,4 @@
-package @@GO_PROJECT_NAME@@
+package transferiaentrypointnats
 
 import "context"
 

@@ -1,7 +1,7 @@
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 
 version: 2
-project_name: "@@PROJECT_NAME@@"
+project_name: "transferia-entrypoint-nats"
 
 before:
   hooks:
@@ -16,8 +16,8 @@ builds:
     goarch:
       - amd64
       - arm64
-    main: ./cmd/@@PROJECT_NAME@@
-    binary: "@@PROJECT_NAME@@"
+    main: ./cmd/transferia-entrypoint-nats
+    binary: "transferia-entrypoint-nats"
 
 archives:
   - formats: ["tar.gz"]
@@ -36,13 +36,13 @@ changelog:
 release:
   github:
     owner: "altinity"
-    name: "@@PROJECT_NAME@@"
+    name: "transferia-entrypoint-nats"
 
   name_template: "{{.ProjectName}}-v{{.Version}}"
 
 dockers:
   - image_templates:
-      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-amd64"
+      - "docker.io/altinity/transferia-entrypoint-nats:{{.Version}}-amd64"
     goos: linux
     goarch: amd64
     use: buildx
@@ -50,7 +50,7 @@ dockers:
     build_flag_templates:
       - "--platform=linux/amd64"
   - image_templates:
-      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-arm64"
+      - "docker.io/altinity/transferia-entrypoint-nats:{{.Version}}-arm64"
     goos: linux
     goarch: arm64
     use: buildx
@@ -58,7 +58,7 @@ dockers:
     build_flag_templates:
       - "--platform=linux/arm64"
 docker_manifests:
-  - name_template: "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}"
+  - name_template: "docker.io/altinity/transferia-entrypoint-nats:{{.Version}}"
     image_templates:
-      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-amd64"
-      - "docker.io/altinity/@@PROJECT_NAME@@:{{.Version}}-arm64"
+      - "docker.io/altinity/transferia-entrypoint-nats:{{.Version}}-amd64"
+      - "docker.io/altinity/transferia-entrypoint-nats:{{.Version}}-arm64"

@@ -43,7 +43,7 @@ fi
 
 mkdir -p "$PROJECT_ROOT/cmd/$PROJECT_NAME"
 
-cat <<EOF >"$PROJECT_ROOT/cmd/$PROJECT_NAME"
+cat <<EOF >"$PROJECT_ROOT/cmd/$PROJECT_NAME/main.go"
 package main
 
 import (
