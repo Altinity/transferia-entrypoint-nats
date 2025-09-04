@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "github.com/Altinity/transferia-entrypoint-nats/nats_source"
 	"github.com/Altinity/transferia-entrypoint-nats/nats_source/connection"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -99,7 +100,7 @@ func getStreamIngestionConfigSingleStreamSingleSubject(t *testing.T) []*connecti
 	return streamIngestionConfig
 }
 
-func TestReplicationMulti(t *testing.T) {
+func TestReplicationMultiStreamMultiSubject(t *testing.T) {
 	var (
 		transferType = abstract.TransferTypeIncrementOnly
 		chDatabase   = "public"

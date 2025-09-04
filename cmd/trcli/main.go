@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	_ "github.com/Altinity/transferia-entrypoint-nats/nats_source"
 	"github.com/spf13/cobra"
 	"github.com/transferia/transferia/cmd/trcli/activate"
 	"github.com/transferia/transferia/cmd/trcli/check"

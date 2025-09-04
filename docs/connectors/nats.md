@@ -104,3 +104,61 @@ Defines how incoming NATS messages are parsed into structured data.
   - Each field consists of:
     - **Name** (`string`): The field name.
     - **Type** (`string`): The data type of the field.
+
+
+
+## An example of full configuration with nats js source and clickhouse destination
+
+```yaml
+id: test
+type: INCREMENT_ONLY
+src:
+  type: "nats"
+  params:
+    Config:
+      Connection:
+        NatsConnectionOptions:
+          URL: "nats://localhost:4222"
+          MaxReconnect: 10
+      StreamIngestionConfigs:
+        - Stream: "events_stream"
+          SubjectIngestionConfigs:
+            - TableName: "events_table"
+              ConsumerConfig:
+                Durable_Name: "events_consumer"
+                Name: "events_consumer"
+                Deliver_Policy: 0
+                Ack_Policy: 1
+                Filter_Subject: "events.*"
+                Max_Batch: 100
+              ParserConfig:
+                "json.lb":
+                  AddRest: false
+                  AddSystemCols: false
+                  DropUnparsed: false
+                  Fields:
+                    - Name: "cluster_id"
+                      Type: "string"
+                    - Name: "cluster_name"
+                      Type: "string"
+                    - Name: "host"
+                      Type: "string"
+                    - Name: "database"
+                      Type: "string"
+                    - Name: "pid"
+                      Type: "uint32"
+                    - Name: "version"
+                      Type: "uint64"
+dst:
+  type: ch
+  params:
+    ShardsList:
+      - Hosts:
+          - "localhost"
+    HTTPPort: 8123
+    NativePort: 9000
+    Database: "transfer_demo"
+    User: "default"
+    Password: ""
+
+```
