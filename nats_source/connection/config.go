@@ -5,7 +5,7 @@ import (
 )
 
 /*
-Config represents the overall configuration required to initialise a NATS Jetstream source
+Config represents the overall configuration required to initialise a NATS Jetstream source.
 */
 type Config struct {
 	Connection *ConnectionConfig
