@@ -2,11 +2,12 @@ package recipe
 
 import (
 	"context"
+	"os"
+
 	"github.com/Altinity/transferia-entrypoint-nats/nats_source/source"
 	tc_nats "github.com/Altinity/transferia-entrypoint-nats/tests/tcrecipes/nats"
 	"github.com/nats-io/nats.go"
 	"github.com/transferia/transferia/library/go/core/xerrors"
-	"os"
 )
 
 const (
@@ -36,7 +37,7 @@ func SourceRecipe(opts ...Option) (*source.NatsSource, error) {
 		if err := StartNatsContainer(opts...); err != nil {
 			return nil, xerrors.Errorf("unable to setup nats container: %w", err)
 		}
-		src.Config.Connection.NatsConnectionOptions.Url = os.Getenv(natsTestUrl)
+		src.Config.Connection.NatsConnectionOptions.URL = os.Getenv(natsTestUrl)
 	}
 	return src, nil
 }

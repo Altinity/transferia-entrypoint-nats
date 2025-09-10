@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/Altinity/transferia-entrypoint-nats/nats_source/connection"
 	"github.com/Altinity/transferia-entrypoint-nats/nats_source/reader"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"golang.org/x/sync/errgroup"
-	"sync"
-	"time"
 
 	"github.com/transferia/transferia/library/go/core/metrics"
 	"github.com/transferia/transferia/library/go/core/xerrors"
@@ -49,14 +50,13 @@ type NatsSource struct {
 var _ model.Source = (*NatsSource)(nil)
 
 func (s *NatsSource) WithDefaults() {
-
 	if s.Config == nil {
 		s.Config = &connection.Config{}
 	}
 	if s.Config.Connection == nil {
 		s.Config.Connection = &connection.ConnectionConfig{
 			NatsConnectionOptions: &connection.NatsConnectionOptions{
-				Url:          nats.DefaultURL,
+				URL:          nats.DefaultURL,
 				MaxReconnect: 10,
 			},
 		}
@@ -81,7 +81,6 @@ func (s *NatsSource) GetProviderType() abstract.ProviderType {
 }
 
 func (s *NatsSource) Validate() error {
-
 	// Validate all stream and subject configurations.
 	for _, streamConfig := range s.Config.StreamIngestionConfigs {
 		for _, subjectConfig := range streamConfig.SubjectIngestionConfigs {
@@ -102,7 +101,6 @@ func (s *NatsSource) Validate() error {
 
 // New now creates a reader for every (stream, group of subjects) pair.
 func New(config *connection.Config, logger log.Logger, registry metrics.Registry) (*NatsSource, error) {
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	source := &NatsSource{
@@ -115,7 +113,7 @@ func New(config *connection.Config, logger log.Logger, registry metrics.Registry
 	}
 
 	// Connect to NATS and obtain the JetStream context.
-	conn, err := nats.Connect(config.Connection.NatsConnectionOptions.Url, nats.MaxReconnects(config.Connection.NatsConnectionOptions.MaxReconnect))
+	conn, err := nats.Connect(config.Connection.NatsConnectionOptions.URL, nats.MaxReconnects(config.Connection.NatsConnectionOptions.MaxReconnect))
 	if err != nil {
 		return nil, xerrors.Errorf("error while connecting to nats: %w", err)
 	}
@@ -153,7 +151,6 @@ func New(config *connection.Config, logger log.Logger, registry metrics.Registry
 }
 
 func (s *NatsSource) parse(r *reader.NatsReader, buffer []jetstream.Msg) []abstract.ChangeItem {
-
 	var data []abstract.ChangeItem
 
 	for _, msg := range buffer {
@@ -199,7 +196,6 @@ func (s *NatsSource) parse(r *reader.NatsReader, buffer []jetstream.Msg) []abstr
 }
 
 func (s *NatsSource) ack(r *reader.NatsReader) func(data []jetstream.Msg, pushSt time.Time, err error) {
-
 	return func(data []jetstream.Msg, pushSt time.Time, err error) {
 		if err := r.AckMessages(data); err != nil {
 			util.Send(s.ctx, s.errCh, err)
@@ -209,11 +205,9 @@ func (s *NatsSource) ack(r *reader.NatsReader) func(data []jetstream.Msg, pushSt
 		s.logger.Trace(fmt.Sprintf("Ack messages done in %v", time.Since(pushSt)))
 		s.metrics.PushTime.RecordDuration(time.Since(pushSt))
 	}
-
 }
 
 func (s *NatsSource) Run(sink abstract.AsyncSink) error {
-
 	eg := new(errgroup.Group)
 	for _, natsReader := range s.readers {
 		localReader := natsReader
@@ -279,7 +273,6 @@ func (s *NatsSource) Run(sink abstract.AsyncSink) error {
 }
 
 func (s *NatsSource) Stop() {
-
 	s.once.Do(func() {
 		s.cancel()
 		_ = s.conn.Drain()
@@ -287,7 +280,6 @@ func (s *NatsSource) Stop() {
 }
 
 func (s *NatsSource) changeItemAsMessage(ci abstract.ChangeItem, tableName string) (parsers.Message, abstract.Partition) {
-
 	seqNo := ci.ColumnValues[1].(uint64)
 	wTime := ci.ColumnValues[2].(time.Time)
 

@@ -6,6 +6,6 @@ type ConnectionConfig struct {
 }
 
 type NatsConnectionOptions struct {
-	Url          string
+	URL          string
 	MaxReconnect int
 }
