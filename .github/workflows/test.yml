@@ -30,7 +30,8 @@ jobs:
           export GOPATH="$HOME/go/"
           export PATH=$PATH:$GOPATH/bin
           go test -v ./... | go-junit-report -set-exit-code > report.xml
-
+        env:
+          USE_TESTCONTAINERS: "1"
       - name: Summarize Test Results
         if: always()
         uses: test-summary/action@v2

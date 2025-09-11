@@ -32,3 +32,8 @@ go.work.sum
 # .vscode/
 
 .bin/.initialized
+
+# idea files
+*idea*
+
+binaries

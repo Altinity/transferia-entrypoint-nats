@@ -1,88 +1,120 @@
-# Go Project Template
+# Nats Provider
 
-This repository is a comprehensive template for building production-ready Go applications. It comes pre-configured with a suite of tools and workflows to enforce best practices, automate common development tasks, and streamline the CI/CD process.
+This repository is a [NATS](https://nats.io/) provider in the [Transferia](https://github.com/transferia/transferia) ecosystem.
 
-## Getting Started
+## Overview
 
-To initialize a new project from this template, use the `goinit` script. This script automates the setup process.
+A provider implementation (source as of now) that handles reading messages from NATS jetstreams and creating change items from it. It's designed to be integrated into the Transferia ecosystem as a new data processing provider.
 
 **Prerequisites:**
 
-- The `just` command-line tool must be installed. You can find installation instructions at [https://github.com/casey/just](https://github.com/casey/just).
+- Go 1.24 or higher
+- Docker or equivalent setup (for running tests with testcontainers)
+- Make
 
-**Initialization Steps:**
+## Quick Start
 
-1. **Run the Initialization Script:**
-    Execute the `goinit` script from the `.bin` directory, providing your desired project name.
-
-    If you're using direnv, the `.bin` directory should already be in your PATH.
-
+1. Clone the repository:
 ```bash
-goinit <repository-name>
+git clone https://github.com/Altinity/transferia-entrypoint-nats.git
+cd transferia-entrypoint-nats
 ```
 
-For example:
-
+2. Install dependencies:
 ```bash
-goinit my-new-app
+go mod download
 ```
 
-2. **Activate Development Environment:**
-This project uses `direnv` and `devbox` to manage the development environment. After the `goinit` script completes, enable the environment by running:
-
+3. Build the project:
 ```bash
-direnv allow
+make build
 ```
 
-This will install all necessary dependencies defined in `devbox.json`.
+4. Use the binary:
+Binary is saved in the ``binaries`` directory. Provide a transfer.yaml file with the configuration and use the binary.
+Sample usage:
+```bash
+./binaries/trcli replicate --transfer=<path to your yaml file>
+```
 
-## Available Commands
+A sample yaml file with all configurations would be as follows:
+```yaml
+id: test
+type: INCREMENT_ONLY
+src:
+  type: "nats"
+  params:
+    Config:
+      Connection:
+        NatsConnectionOptions:
+          URL: "nats://localhost:4222"
+          MaxReconnect: 10
+      StreamIngestionConfigs:
+        - Stream: "events_stream"
+          SubjectIngestionConfigs:
+            - TableName: "events_table"
+              ConsumerConfig:
+                Durable_Name: "events_consumer"
+                Name: "events_consumer"
+                Deliver_Policy: 0
+                Ack_Policy: 1
+                Filter_Subject: "events.*"
+                Max_Batch: 100
+              ParserConfig:
+                "json.lb":
+                  AddRest: false
+                  AddSystemCols: false
+                  DropUnparsed: false
+                  Fields:
+                    - Name: "cluster_id"
+                      Type: "string"
+                    - Name: "cluster_name"
+                      Type: "string"
+                    - Name: "host"
+                      Type: "string"
+                    - Name: "database"
+                      Type: "string"
+                    - Name: "pid"
+                      Type: "uint32"
+                    - Name: "version"
+                      Type: "uint64"
+dst:
+  type: ch
+  params:
+    ShardsList:
+      - Hosts:
+          - "localhost"
+    HTTPPort: 8123
+    NativePort: 9000
+    Database: "transfer_demo"
+    User: "default"
+    Password: ""
 
-This project uses a `justfile` to provide a set of commands for automating common development tasks.
+```
 
-| Command | Description |
-| :--- | :--- |
-| `help` | Displays a list of all available `just` commands. |
-| `deps` | Checks that all required dependencies are installed. |
-| `clean` | Removes generated files and build artifacts. |
-| `generate` (or `gen`) | Runs Go code generation and formats the code. |
-| `lint` | Runs all linters on the codebase. |
-| `lint-ci` | A CI-optimized linting command that only checks changed files. |
-| `lint-fix` | Runs linters with the `--fix` flag to automatically correct issues. |
-| `fmt` | Formats Go code. |
-| `test` | Executes the Go test suite for all packages. |
-| `test-race` | Runs tests with the Go race detector enabled. |
-| `test-coverage` | Runs tests and generates a code coverage report. |
-| `build` | A placeholder for building project components. |
-| `version` | Displays the current project version based on the latest Git tag. |
-| `devbox` | Installs the Devbox tool if it is not already present. |
-| `shell` | Enters a `devbox` shell with all project dependencies. |
+## Project Structure
 
-## CI/CD Pipeline
+- `cmd/` - Main application entry points, it's custom main file same as in transfer, but with extra plugin
+- `binaries/` - Compiled binaries
+- `doc/` - Documentation, including design documents
 
-The repository is equipped with a CI/CD pipeline that automates testing, security analysis, and releases.
+## Key Features
+- **Batch Fetch** Consumers should be able to fetch messages in batches to improve throughput.
+- **Support for multiple Acknowledgement modes** Once messages are consumed, they can be acknowledged cumulatively, individually or acknowledgement can be skipped all together. This should be driven by the consumer configuration.
+- **Independent Ingestion per Consumer:**  Each consumer operates autonomously, maximizing throughput and ensuring a clear separation of responsibilities. In this approach, every group of subjects is assigned to its own consumer, so that the entire lifecycle—from message consumption and parsing, to pushing to the sink and acknowledgment—is handled independently without interference from other consumers.
+- **Graceful Shutdown And Error Handling:** The source implementation should be able to handle errors gracefully and shutdowns should not leave streams and consumers in an inconsistent state.
+- **Use of existing constructs in Transferia repository:** The implementation should not go about reinventing the wheel and should use existing constructs like waitable parse queues, parsers etc.. for implementation.
+- **At least once semantics:** This implementation currently provides atleast once semantics.
 
-### Testing (`test.yml`)
+## Assumptions
+-  **Subject to Table Mapping:** A group of nats subjects, within a stream map to a single table. This approach helps reduce metadata overhead, simplifies management, and enables cross-subject analytics.
+- **JetStreams are pre created and not the responsibility of the framework:**  It is assumed that there is a pre existing stream with one or more subjects through which the messages are to be consumerd by NATS Jetstream source.
+- **[Consumer](https://docs.nats.io/nats-concepts/jetstream/consumers) Creation and Upsertion:** A consumer is created with filtered subjects on a stream. This behavior is driven by the configuration provided during connector startup.
+- **Usage of [Simplified Jetstream Api](https://natsbyexample.com/examples/jetstream/api-migration/go):**
+  This pr is based on the simplified jetstream API. The new JetStream API provides simplified semantics for JetStream asset management and message consumption. It removes the complexity of Subscribe() in favor of more explicit separation of creating consumers and consuming messages.
 
-- **Trigger:** Runs on every push to `main` and on every pull request.
-- **Process:**
-    1. Checks out the code.
-    2. Sets up the Go environment.
-    3. Runs code generation and tests.
-    4. Uploads test results as a workflow artifact.
-
-### Security (`security.yml`)
-
-- **Trigger:** Runs on push to `main` and on pull requests.
-- **Jobs:**
-  - **SAST (Static Application Security Testing):** Uses `golangci-lint` to perform static analysis.
-  - **SCA (Software Composition Analysis):** Uses `govulncheck` to scan for vulnerabilities in dependencies.
-
-### Releases (`release.yml`)
-
-- **Trigger:** Manual or on a `workflow_call` with a specified Git tag.
-- **Process:**
-    1. Checks out the specified Git tag.
-    2. Sets up Go, QEMU, and Docker Buildx.
-    3. Logs into DockerHub.
-    4. Runs `GoReleaser` to build release artifacts, create a GitHub Release, and publish Docker images.
+## Motivation
+Modern distributed systems are increasingly adopting NATS Jetstream as their preferred messaging solution due to its:
+- **Scalability & Performance:** NATS Jetstream offers low latency and high throughput, ideal for handling high-volume, real-time data.
+- **Reliability:** Its built-in at-least-once delivery and durable message storage ensure high reliability and fault tolerance.
+- **Widespread Adoption:** As more systems embrace NATS Jetstream for distributed messaging, integrating it into Transferia positions the platform to meet contemporary architectural demands and attract a broader user base.

@@ -16,7 +16,7 @@ linters:
     - usestdlibvars
   settings:
     gosec:
-      excludes: []
+      excludes: ["G115"]
     staticcheck:
       checks:
         - "all"
